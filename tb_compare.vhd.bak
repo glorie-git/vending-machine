@@ -1,0 +1,76 @@
+LIBRARY IEEE;
+USE IEEE.STD_LOGIC_1164.all;
+USE IEEE.NUMERIC_STD.all;
+
+ENTITY tb_compare IS
+END tb_compare;
+
+ARCHITECTURE test OF tb_compare IS 
+
+COMPONENT compare IS
+PORT ( 	price_in, accumulator: in STD_LOGIC_VECTOR ( 5 downto 0);
+			change : out STD_LOGIC_VECTOR ( 5 downto 0 );
+			done : out std_logic);
+END COMPONENT;
+
+SIGNAL price_sig, accum_sig, change_sig : STD_LOGIC_VECTOR ( 5 DOWNTO 0 );
+SIGNAL done_sig : STD_LOGIC;
+
+BEGIN
+
+	DUT: 	compare
+			port map ( price_in => price_sig, accumulator => accum_sig, change => change_sig, done => done_sig );
+			
+	PROCESS 
+		BEGIN
+		
+		price_sig <= "000101";
+		accum_sig <= "000001";
+		wait for 20 ns;
+		
+		price_sig <= "000101";
+		accum_sig <= "000010";
+		wait for 20 ns;
+		
+		price_sig <= "000101";
+		accum_sig <= "000011";
+		wait for 20 ns;
+		
+		price_sig <= "000101";
+		accum_sig <= "000100";
+		wait for 20 ns;
+		
+		price_sig <= "000101";
+		accum_sig <= "000101";
+		wait for 20 ns;
+		
+		price_sig <= "000101";
+		accum_sig <= "000101";
+		wait for 20 ns;
+		
+		price_sig <= "000101";
+		accum_sig <= "000111";
+		wait for 20 ns;
+		
+		price_sig <= "000101";
+		accum_sig <= "001000";
+		wait for 20 ns;
+		
+		price_sig <= "000101";
+		accum_sig <= "001001";
+		wait for 20 ns;
+		
+		price_sig <= "000000";
+		accum_sig <= "001010";
+		wait for 20 ns;
+		
+		--price_sig <= "111111";
+		--accum_sig <= "111111";
+		--wait for 20 ns;
+		
+		WAIT;
+		
+	END PROCESS;
+
+END test;
+

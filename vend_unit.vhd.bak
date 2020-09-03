@@ -1,0 +1,101 @@
+--implements vending mode
+
+LIBRARY IEEE;
+USE ieee.numeric_std.all;
+USE ieee.std_logic_1164.all;
+use ieee.std_logic_unsigned.all;
+
+ENTITY vend_unit IS
+	PORT 
+	( 	
+		clock, reset, enable, N, D, Q : in std_logic;
+		price_in : in STD_LOGIC_VECTOR ( 5 downto 0);
+		change : out STD_LOGIC_VECTOR ( 11 downto 0) := (OTHERS => '0');
+		insert_out : OUT STD_LOGIC_VECTOR ( 11 DOWNTO 0 ) := (OTHERS => '0');
+		done : out std_logic
+	);
+END vend_unit;
+
+architecture behaviour of vend_unit is
+
+COMPONENT accumulator is
+	port	
+	(	clk, rst, en : in std_logic;
+		N, Q, D : IN STD_LOGIC;
+		accum_out : out STD_LOGIC_VECTOR ( 5 downto 0 )
+	);
+END COMPONENT;
+
+COMPONENT compare IS
+	PORT 
+	( 	
+		N, Q, D : IN STD_LOGIC;
+		price_in, accum_in: IN STD_LOGIC_VECTOR( 5 DOWNTO 0 );
+		change : OUT STD_LOGIC_VECTOR ( 5 DOWNTO 0);
+		done : OUT STD_LOGIC
+	);
+END COMPONENT;
+
+COMPONENT convert2bcd IS
+	PORT(	binary : IN STD_LOGIC_VECTOR(7 DOWNTO 0);
+			bcd : OUT STD_LOGIC_VECTOR(11 DOWNTO 0)); 
+END COMPONENT;
+
+	TYPE state_type IS (idle, calculating, convert);
+	SIGNAL next_state, current_state : state_type;
+	
+signal accum_output_sig : STD_LOGIC_VECTOR ( 5 downto 0 ) := "000000";
+SIGNAL done_sig : STD_LOGIC ;
+SIGNAL changeSig : STD_LOGIC_VECTOR ( 5 DOWNTO 0);
+
+BEGIN
+	
+	accum: accumulator
+		PORT MAP (	clk => clock, rst => reset, en => enable, N => N, Q => Q, D => D, accum_out => accum_output_sig );
+					
+	comp : compare
+		PORT MAP ( 	price_in => price_in, accum_in => accum_output_sig, done => done_sig, change => changeSig, 
+						N => N, Q => Q, D => D );
+	
+	
+	
+	PROCESS (current_state, enable, N, D, Q)
+	BEGIN
+		CASE current_state IS
+			WHEN idle =>
+			insert_out <= (OTHERS => '0');
+			Change <= (OTHERS => '0');
+				IF ( enable = '1' ) THEN
+					IF ( N = '1' OR Q = '1' OR D = '1' ) THEN
+						convertedTotal <= (OTHERS => '0');
+						convertedChange <= (OTHERS => '0');
+						next_state <= calculating;
+					END IF;
+				ELSE	
+					next_state <= idle;
+				END IF;
+			WHEN calculating =>
+				IF ( done_Sig = '1' ) THEN
+					next_state <= convert;
+				ELSE
+					next_state <= calculating;
+				END IF;
+			WHEN convert =>
+				insert_out <= accum_output_sig*("000101");
+				change <= changeSig*("000101");
+				next_state <= idle;
+		END CASE;
+	END PROCESS;
+
+done <= done_Sig;
+
+	PROCESS (clock, reset)
+	BEGIN	
+		IF (reset = '1') THEN
+			current_state <= idle;
+		ELSIF (RISING_EDGE(clock)) THEN
+			current_state <= next_state;
+		END IF;
+	END PROCESS;
+
+END behaviour;
